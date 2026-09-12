@@ -1,0 +1,10 @@
+{
+  "CustomIndexerSite": {
+    "name": "自定义索引站点",
+    "description": "修改或扩展内建索引器支持的站点，可用于添加官方未适配的站点（如：爱恋动漫 kisssub.org）。来源：jxxghp/MoviePilot-Plugins customindexer 的 v2 适配版。",
+    "labels": "站点,索引",
+    "version": "1.1",
+    "author": "jxxghp",
+    "v2": true
+  }
+}

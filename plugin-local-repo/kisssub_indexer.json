@@ -1,0 +1,138 @@
+{
+  "id": "kisssub",
+  "site": "kisssub",
+  "name": "爱恋动漫",
+  "domain": "https://www.kisssub.org/",
+  "public": 1,
+  "proxy": false,
+  "timeout": 15,
+  "result_num": 50,
+  "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+  "search": {
+    "paths": [
+      {
+        "type": "all",
+        "path": "search.php?keyword={keyword}&page={page}"
+      }
+    ]
+  },
+  "browse": {
+    "path": "",
+    "list": {
+      "selector": "#data_list > tr"
+    },
+    "fields": {
+      "title": {
+        "selector": "td:nth-child(3) > a"
+      },
+      "description": {
+        "text": "分类：{{ fields.tags }}　UP主：{{ fields.subject }}"
+      },
+      "tags": {
+        "selector": "td:nth-child(2)"
+      },
+      "subject": {
+        "selector": "td:nth-child(5)"
+      },
+      "details": {
+        "selector": "td:nth-child(3) > a",
+        "attribute": "href"
+      },
+      "download": {
+        "selector": "td:nth-child(3) > a",
+        "attribute": "href",
+        "filters": [
+          {
+            "name": "re_search",
+            "args": [
+              "show-([0-9a-f]{40})",
+              1
+            ]
+          },
+          {
+            "name": "appendleft",
+            "args": "http://v2.uploadbt.com/?r=down&hash="
+          }
+        ]
+      },
+      "size": {
+        "selector": "td:nth-child(4)"
+      },
+      "date_added": {
+        "selector": "td:nth-child(1)",
+        "filters": [
+          {
+            "name": "replace",
+            "args": [
+              "/",
+              "-"
+            ]
+          },
+          {
+            "name": "dateparse",
+            "args": "%Y-%m-%d"
+          }
+        ]
+      }
+    }
+  },
+  "torrents": {
+    "list": {
+      "selector": "#data_list > tr"
+    },
+    "fields": {
+      "title": {
+        "selector": "td:nth-child(3) > a"
+      },
+      "description": {
+        "text": "分类：{{ fields.tags }}　UP主：{{ fields.subject }}"
+      },
+      "tags": {
+        "selector": "td:nth-child(2)"
+      },
+      "subject": {
+        "selector": "td:nth-child(5)"
+      },
+      "details": {
+        "selector": "td:nth-child(3) > a",
+        "attribute": "href"
+      },
+      "download": {
+        "selector": "td:nth-child(3) > a",
+        "attribute": "href",
+        "filters": [
+          {
+            "name": "re_search",
+            "args": [
+              "show-([0-9a-f]{40})",
+              1
+            ]
+          },
+          {
+            "name": "appendleft",
+            "args": "http://v2.uploadbt.com/?r=down&hash="
+          }
+        ]
+      },
+      "size": {
+        "selector": "td:nth-child(4)"
+      },
+      "date_added": {
+        "selector": "td:nth-child(1)",
+        "filters": [
+          {
+            "name": "replace",
+            "args": [
+              "/",
+              "-"
+            ]
+          },
+          {
+            "name": "dateparse",
+            "args": "%Y-%m-%d"
+          }
+        ]
+      }
+    }
+  }
+}
