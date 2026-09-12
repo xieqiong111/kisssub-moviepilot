@@ -3,7 +3,7 @@
     "name": "自定义索引站点",
     "description": "修改或扩展内建索引器支持的站点，注入自定义索引器并自动创建站点记录，无需站点认证。",
     "labels": "站点,索引",
-    "version": "1.3",
+    "version": "1.4",
     "author": "jxxghp",
     "v2": true
   }
