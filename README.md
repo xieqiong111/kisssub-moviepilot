@@ -5,13 +5,12 @@
 MoviePilot 内建站点列表(闭源 `user.sites.v2.bin`)不含 kisssub,且添加站点时强制校验域名必须在索引器列表内(否则提示"该站点不支持"),因此需要一个**自定义索引器注入插件 + 本站点的索引器模板**。本仓库两者都已备好:
 
 ```
-kisssub-moviepilot/
-├── README.md                        ← 本说明
-└── plugin-local-repo/               ← 本地插件仓库(可直接设为 PLUGIN_LOCAL_REPO_PATHS)
-    ├── package.v2.json
-    ├── kisssub_indexer.json         ← 索引器模板(选择器已按真实页面结构编写)
-    ├── paste_config.txt             ← 插件里要粘贴的一行配置(域名|base64)
-    └── plugins.v2/customindexersite/__init__.py
+kisssub-moviepilot/          ← 本仓库同时是标准插件市场仓库(package.v2.json 位于根目录)
+├── README.md                ← 本说明
+├── package.v2.json
+├── kisssub_indexer.json     ← 索引器模板(选择器已按真实页面结构编写)
+├── paste_config.txt         ← 插件里要粘贴的一行配置(域名|base64)
+└── plugins.v2/customindexersite/__init__.py
 ```
 
 官方原版 `customindexer` 插件只适配 MoviePilot v1,本仓库的 `customindexersite` 是按 v2.15.x 插件基类(`_PluginBase`)适配的等价实现,核心同样是调用 `SitesHelper().add_indexer(域名, 索引配置)`。
@@ -22,7 +21,7 @@ kisssub-moviepilot/
 
 ### 方式 A:本地插件仓库(推荐,可从插件市场正常安装/卸载)
 
-1. 把 `plugin-local-repo/` 整个目录上传到能被 MoviePilot 容器读到的位置,例如挂载 `./plugin-local-repo:/mp-plugins-local`。
+1. 把本仓库克隆/下载到能被 MoviePilot 容器读到的位置(需保证 `package.v2.json` 在目录根),例如挂载 `./kisssub-moviepilot:/mp-plugins-local`。
 2. 给 MoviePilot 增加环境变量:
 
    ```yaml
@@ -33,11 +32,15 @@ kisssub-moviepilot/
 
 ### 方式 B:直接放入插件目录
 
-把 `plugin-local-repo/plugins.v2/customindexersite/` 整个文件夹拷入容器内 `/app/plugins/customindexersite/`,重启 MoviePilot 即可(MP v2 从 `app/plugins` 加载插件)。
+把 `plugins.v2/customindexersite/` 整个文件夹拷入容器内 `/app/plugins/customindexersite/`,重启 MoviePilot 即可(MP v2 从 `app/plugins` 加载插件)。
+
+### 方式 C:插件市场在线安装(最省事)
+
+在 MoviePilot `设定 → 系统 → 插件市场` 中确认已包含本仓库地址 `https://github.com/xieqiong111/kisssub-moviepilot`,刷新插件市场后直接安装 **自定义索引站点**。
 
 ## 二、配置插件
 
-`插件 → 自定义索引站点 → 启用`,在"站点索引配置"中粘贴 `plugin-local-repo/paste_config.txt` 的整行内容:
+`插件 → 自定义索引站点 → 启用`,在"站点索引配置"中粘贴 `paste_config.txt` 的整行内容:
 
 ```
 kisssub.org|<JSON 的 base64,见 paste_config.txt>
@@ -46,7 +49,7 @@ kisssub.org|<JSON 的 base64,见 paste_config.txt>
 保存。日志中应出现 `自定义索引站点已加载:kisssub.org(爱恋动漫)`。
 
 > 修改了 `kisssub_indexer.json` 后,重新生成 base64 再更新插件配置:
-> `python -c "import base64;print(base64.b64encode(open('plugin-local-repo/kisssub_indexer.json','rb').read()).decode())"`
+> `python -c "import base64;print(base64.b64encode(open('kisssub_indexer.json','rb').read()).decode())"`
 
 ## 三、添加站点
 
