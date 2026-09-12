@@ -1,5 +1,6 @@
 import base64
 import json
+from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
 from app.db.site_oper import SiteOper
@@ -14,7 +15,7 @@ class CustomIndexerSite(_PluginBase):
     # 插件描述
     plugin_desc = "修改或扩展内建索引器支持的站点，支持注入自定义索引器并自动创建站点记录，无需站点认证。"
     # 插件版本
-    plugin_version = "1.2"
+    plugin_version = "1.3"
     # 插件作者
     plugin_author = "jxxghp"
     # 作者主页
@@ -84,17 +85,64 @@ class CustomIndexerSite(_PluginBase):
     def __ensure_sites(self) -> List[str]:
         """
         为 ensure_sites 中的域名创建站点记录（需要有可用索引器模板，含内建或本插件注入的）
+        每一步结果写入插件数据 last_run，便于远程诊断。
         """
+        diag = {"time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "steps": []}
+
+        def _diag(step, detail):
+            diag["steps"].append({"step": step, "detail": str(detail)[:300]})
+            logger.info(f"[自定义索引站点][{step}] {str(detail)[:200]}")
+
         created = []
-        site_oper = SiteOper()
         siteshelper = SitesHelper()
+        try:
+            all_indexers = siteshelper.get_indexers()
+            if isinstance(all_indexers, dict):
+                _diag("indexers", f"共 {len(all_indexers)} 个模板")
+            else:
+                _diag("indexers", f"get_indexers 返回 {type(all_indexers).__name__}, 数量 {len(all_indexers) if all_indexers else 0}")
+        except Exception as err:
+            all_indexers = None
+            _diag("indexers", f"获取模板列表出错: {err}")
+
+        def _find_template(domain):
+            # 优先 get_indexer，失败则从 get_indexers() 中按域名匹配
+            try:
+                t = siteshelper.get_indexer(domain)
+                if t:
+                    return t
+            except Exception as err:
+                _diag(f"get_indexer({domain})", f"出错: {err}")
+            if isinstance(all_indexers, dict):
+                if domain in all_indexers:
+                    return all_indexers[domain]
+                for k, v in all_indexers.items():
+                    if k.endswith(domain) or domain.endswith(k):
+                        return v
+            elif isinstance(all_indexers, list):
+                for t in all_indexers:
+                    if isinstance(t, dict) and (t.get("domain", "").endswith(domain) or domain in t.get("domain", "")):
+                        return t
+            return None
+
+        try:
+            site_oper = SiteOper()
+            _diag("site_oper", "SiteOper 初始化成功")
+        except Exception as err:
+            _diag("site_oper", f"初始化失败: {err}")
+            self.save_data("last_run", diag)
+            return []
+
         for domain in [d.strip() for d in self._ensure_sites.split(",") if d.strip()]:
             try:
-                indexer = siteshelper.get_indexer(domain)
+                indexer = _find_template(domain)
                 if not indexer:
-                    logger.warn(f"站点 {domain} 没有可用的索引器模板，跳过创建站点记录")
+                    _diag(f"template:{domain}", "未找到索引器模板")
                     continue
-                if site_oper.get_by_domain(domain):
+                _diag(f"template:{domain}", f"找到模板: {indexer.get('name')}")
+                existed = site_oper.get_by_domain(domain)
+                if existed:
+                    _diag(f"create:{domain}", f"记录已存在 id={existed.id}")
                     continue
                 site_oper.add(
                     name=indexer.get("name") or domain,
@@ -105,13 +153,19 @@ class CustomIndexerSite(_PluginBase):
                     pri=100,
                     public=1 if indexer.get("public") else 0,
                 )
-                if site_oper.get_by_domain(domain):
+                after = site_oper.get_by_domain(domain)
+                if after:
                     created.append(domain)
-                    logger.info(f"站点记录已创建：{domain}（{indexer.get('name')}）")
+                    _diag(f"create:{domain}", f"创建成功 id={after.id}")
                 else:
-                    logger.warn(f"站点记录创建失败：{domain}")
+                    _diag(f"create:{domain}", "创建后查询不到，失败")
             except Exception as err:
-                logger.error(f"创建站点记录 {domain} 出错：{err}")
+                _diag(f"create:{domain}", f"出错: {err}")
+
+        try:
+            self.save_data("last_run", diag)
+        except Exception as err:
+            logger.error(f"保存诊断数据失败：{err}")
         return created
 
     def get_state(self) -> bool:
